@@ -398,127 +398,17 @@ body {
 }
 
 .task-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  padding: 20px;
+  display: flex;
   width: 100%;
-  align-content: start;
+  height: 100%;
+  min-height: 0;
 }
 
-.task-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  animation: fadeIn 0.5s ease-out;
-  transition: all 0.3s ease;
+.task-list:has(.table-container) {
+  flex-direction: column;
 }
 
-.task-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
-}
-
-.task-card.overdue {
-  border-left: 5px solid #f44336;
-  background: linear-gradient(135deg, #fee 0%, #fef 100%);
-}
-
-.task-card.completed {
-  opacity: 0.7;
-  border-left: 5px solid #4CAF50;
-}
-
-.task-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  margin-bottom: 15px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.task-title {
-  font-size: 1.2em;
-  font-weight: 700;
-  color: #333;
-  flex: 1;
-}
-
-.task-assigned {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.85em;
-  font-weight: 600;
-  margin-left: 10px;
-}
-
-.task-details {
-  margin-bottom: 15px;
-  font-size: 0.95em;
-}
-
-.task-details p {
-  margin: 8px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.date-highlight {
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.date-future {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.date-today {
-  background: #fef08a;
-  color: #854d0e;
-}
-
-.date-overdue {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.next-assignee-indicator {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-  padding: 10px 12px;
-  border-radius: 8px;
-  margin-top: 10px;
-  border-left: 4px solid #667eea;
-}
-
-.task-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.task-actions .btn {
-  flex: 1;
-  min-width: 120px;
-  justify-content: center;
-}
-
-@media (max-width: 768px) {
-  .task-actions .btn {
-    min-width: 100%;
-  }
-
-  .task-list {
-    grid-template-columns: 1fr;
-  }
-}
+/* Old task-card layout removed - using table layout instead */
 
 .loading {
   text-align: center;
@@ -769,3 +659,681 @@ body {
   font-size: 1.2em;
   font-weight: bold;
 }
+/* ==================== TABLE STYLES ==================== */
+
+.table-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.table-container-empty {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.task-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.task-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.task-table th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.95em;
+  white-space: nowrap;
+}
+
+.task-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.95em;
+}
+
+.task-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.task-table tbody tr:hover {
+  background-color: #f8f9fb;
+}
+
+.task-table tbody tr.completed {
+  opacity: 0.7;
+}
+
+.task-table tbody tr.overdue {
+  background-color: #fee2e2;
+}
+
+.task-table tbody tr.completed td {
+  color: #999;
+}
+
+/* Table Cell Styles */
+.frequency-cell,
+.owner-cell,
+.date-cell,
+.title-cell {
+  text-align: left;
+}
+
+.title-cell {
+  font-weight: 500;
+  color: #333;
+  max-width: 300px;
+}
+
+.cell-content {
+  display: block;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.owner-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.date-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.date-badge.date-future {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.date-badge.date-today {
+  background: #fef08a;
+  color: #854d0e;
+}
+
+.date-badge.date-overdue {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Actions Cell */
+.actions-cell {
+  text-align: center;
+  width: 200px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-table {
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-table:hover {
+  transform: translateY(-2px);
+}
+
+.btn-table.btn-complete {
+  background: #10b981;
+  color: white;
+}
+
+.btn-table.btn-complete:hover {
+  background: #059669;
+}
+
+.btn-table.btn-info {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-table.btn-info:hover {
+  background: #2563eb;
+}
+
+.btn-table.btn-edit {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-table.btn-edit:hover {
+  background: #d97706;
+}
+
+.btn-table.btn-delete {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-table.btn-delete:hover {
+  background: #dc2626;
+}
+
+/* ==================== TASK DETAILS MODAL ==================== */
+
+.task-details-modal {
+  max-width: 600px;
+  width: 95%;
+}
+
+.modal-body {
+  padding: 30px;
+  max-height: calc(90vh - 150px);
+  overflow-y: auto;
+}
+
+.detail-section {
+  margin-bottom: 24px;
+}
+
+.detail-section h3 {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  background: #f8f9fb;
+  padding: 12px;
+  border-radius: 8px;
+  color: #333;
+  font-size: 1em;
+  margin: 0;
+}
+
+.participants-list-view {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.participant-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.completion-history {
+  background: #f8f9fb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.9em;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-date {
+  font-weight: 600;
+  color: #333;
+}
+
+.history-by {
+  color: #666;
+  font-size: 0.85em;
+}
+
+/* ==================== MOBILE RESPONSIVE DESIGN ==================== */
+
+@media (max-width: 1024px) {
+  .header h1 {
+    font-size: 2em;
+  }
+
+  .header p {
+    font-size: 1em;
+  }
+
+  .main-content {
+    padding: 20px;
+  }
+
+  .task-table th,
+  .task-table td {
+    padding: 12px 8px;
+    font-size: 0.9em;
+  }
+
+  .btn-table {
+    padding: 6px 8px;
+    font-size: 0.85em;
+    min-width: 32px;
+    height: 32px;
+  }
+
+  .actions-cell {
+    width: 160px;
+  }
+
+  .action-buttons {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 8px;
+  }
+
+  .container {
+    border-radius: 16px;
+  }
+
+  .header {
+    padding: 25px 20px;
+  }
+
+  .header h1 {
+    font-size: 1.5em;
+    margin-bottom: 8px;
+  }
+
+  .header p {
+    font-size: 0.95em;
+  }
+
+  .sync-status {
+    font-size: 0.85em;
+    margin-top: 10px;
+  }
+
+  .main-content {
+    padding: 15px;
+  }
+
+  .form-modal {
+    width: 95%;
+  }
+
+  .btn-add-task {
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    font-size: 28px;
+  }
+
+  /* Table styles for tablet/mobile */
+  .task-table {
+    font-size: 0.85em;
+  }
+
+  .task-table th {
+    padding: 12px 8px;
+    font-size: 0.8em;
+  }
+
+  .task-table td {
+    padding: 10px 6px;
+    font-size: 0.85em;
+  }
+
+  .title-cell {
+    min-width: 120px;
+  }
+
+  .owner-badge {
+    padding: 4px 8px;
+    font-size: 0.75em;
+  }
+
+  .date-badge {
+    padding: 4px 8px;
+    font-size: 0.75em;
+  }
+
+  .btn-table {
+    padding: 5px 6px;
+    font-size: 0.75em;
+    min-width: 28px;
+    height: 28px;
+  }
+
+  .actions-cell {
+    width: 140px;
+  }
+
+  .action-buttons {
+    gap: 3px;
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .detail-section {
+    margin-bottom: 18px;
+  }
+
+  .detail-section h3 {
+    font-size: 0.8em;
+    margin-bottom: 6px;
+  }
+
+  .detail-value {
+    padding: 10px;
+    font-size: 0.9em;
+  }
+
+  .task-details-modal {
+    width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    padding: 4px;
+  }
+
+  .container {
+    border-radius: 12px;
+    height: auto;
+  }
+
+  .header {
+    padding: 20px 15px;
+  }
+
+  .header h1 {
+    font-size: 1.3em;
+    margin-bottom: 5px;
+  }
+
+  .header p {
+    font-size: 0.9em;
+  }
+
+  .header::before {
+    display: none;
+  }
+
+  .main-content {
+    padding: 10px;
+    min-height: 0;
+  }
+
+  .form-modal {
+    width: 98%;
+    border-radius: 16px;
+  }
+
+  .form-container {
+    padding: 20px;
+  }
+
+  .btn-add-task {
+    bottom: 15px;
+    right: 15px;
+    width: 45px;
+    height: 45px;
+    font-size: 24px;
+  }
+
+  /* Responsive table for mobile - keep table structure but adjust sizing */
+  .table-container {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .table-wrapper {
+    border-radius: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .task-table {
+    font-size: 0.75em;
+    min-width: 500px;
+  }
+
+  .task-table th {
+    padding: 10px 6px;
+    font-size: 0.65em;
+    white-space: nowrap;
+  }
+
+  .task-table td {
+    padding: 8px 5px;
+    font-size: 0.75em;
+    white-space: nowrap;
+  }
+
+  .frequency-cell {
+    display: none;
+  }
+
+  .owner-cell {
+    min-width: 70px;
+  }
+
+  .date-cell {
+    min-width: 90px;
+  }
+
+  .title-cell {
+    min-width: 120px;
+    white-space: normal;
+  }
+
+  .cell-content {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .owner-badge {
+    padding: 3px 6px;
+    font-size: 0.65em;
+    display: inline-block;
+    width: fit-content;
+  }
+
+  .date-badge {
+    padding: 3px 6px;
+    font-size: 0.65em;
+  }
+
+  .btn-table {
+    padding: 4px 5px;
+    font-size: 0.6em;
+    min-width: 22px;
+    height: 22px;
+  }
+
+  .actions-cell {
+    width: 110px;
+    min-width: 110px;
+  }
+
+  .action-buttons {
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .modal-body {
+    padding: 15px;
+    max-height: calc(90vh - 120px);
+  }
+
+  .detail-section {
+    margin-bottom: 15px;
+  }
+
+  .detail-section h3 {
+    font-size: 0.75em;
+    margin-bottom: 5px;
+  }
+
+  .detail-value {
+    padding: 8px;
+    font-size: 0.85em;
+  }
+
+  .participants-list-view {
+    gap: 6px;
+  }
+
+  .participant-badge {
+    padding: 6px 10px;
+    font-size: 0.8em;
+  }
+
+  .task-details-modal {
+    width: 95%;
+  }
+
+  .modal-header {
+    padding: 20px;
+  }
+
+  .modal-header h2 {
+    font-size: 1.2em;
+  }
+
+  .modal-close {
+    width: 28px;
+    height: 28px;
+  }
+
+  .form-close-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 360px) {
+  .task-table {
+    min-width: 450px;
+    font-size: 0.65em;
+  }
+
+  .task-table th {
+    font-size: 0.6em;
+    padding: 8px 4px;
+  }
+
+  .task-table td {
+    padding: 6px 3px;
+    font-size: 0.65em;
+  }
+
+  .btn-table {
+    padding: 3px 4px;
+    font-size: 0.55em;
+    min-width: 20px;
+    height: 20px;
+  }
+
+  .actions-cell {
+    width: 100px;
+    min-width: 100px;
+  }
+
+  .owner-cell {
+    min-width: 60px;
+  }
+
+  .date-cell {
+    min-width: 75px;
+  }
+
+  .title-cell {
+    min-width: 100px;
+  }
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+
+/* Hide elements on mobile if needed */
+@media (max-width: 768px) {
+  /* Can add more mobile-specific hiding here */
+}
+
+/* Scrollbar styling */
+.table-wrapper::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 10px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
+
+/*  */

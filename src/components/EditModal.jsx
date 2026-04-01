@@ -99,12 +99,8 @@ function EditModal({ task, users, onClose, onSave }) {
     let intervalDays = null;
     let nextDue = null;
 
-    // If manual date is set, use it
-    if (formData.nextDue) {
-      const dueDate = new Date(formData.nextDue + 'T00:00:00');
-      nextDue = dueDate.toISOString();
-    } else if (formData.frequency && formData.frequency !== 'none') {
-      // Otherwise, calculate based on frequency
+    // First, calculate intervalDays based on frequency
+    if (formData.frequency && formData.frequency !== 'none') {
       switch (formData.frequency) {
         case 'daily':
           intervalDays = 1;
@@ -116,13 +112,17 @@ function EditModal({ task, users, onClose, onSave }) {
           intervalDays = parseInt(formData.customDays);
           break;
       }
+    }
 
-      if (intervalDays) {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const nextDueDate = new Date(today.getTime() + intervalDays * 24 * 60 * 60 * 1000);
-        nextDue = nextDueDate.toISOString();
-      }
+    // Then, calculate nextDue based on manual date or frequency
+    if (formData.nextDue) {
+      const dueDate = new Date(formData.nextDue + 'T00:00:00');
+      nextDue = dueDate.toISOString();
+    } else if (intervalDays) {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const nextDueDate = new Date(today.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+      nextDue = nextDueDate.toISOString();
     }
 
     const newAssigneeIndex = formData.participants.indexOf(formData.currentAssignee);
