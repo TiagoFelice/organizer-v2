@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Organizador de Tarefas Domésticas</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="app.js" as="script">
+    <link rel="preload" href="styles.css" as="style">
+    
+    <!-- DNS prefetch for Firebase -->
+    <link rel="dns-prefetch" href="//firestore.googleapis.com">
+    <link rel="dns-prefetch" href="//identitytoolkit.googleapis.com">
+
+    <!-- Firebase SDK - Carregamento imediato para melhor performance -->
+    <script src="/__/firebase/12.5.0/firebase-app-compat.js"></script>
+    <script src="/__/firebase/12.5.0/firebase-firestore-compat.js"></script>
+    <script src="/__/firebase/init.js?useEmulator=true"></script>
+    
+    <!-- Estilos e Scripts da aplicação -->
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="app.js"></script>
+    
+    <!-- Limpar Service Workers antigos (se existirem) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister().then(function(success) {
+              console.log('Service Worker antigo removido:', success);
+            });
+          }
+        });
+      }
+    </script>
+    
+    <!-- Service Worker desabilitado - causava problemas de cache -->
+    <!-- Para reativar, descomente o código abaixo -->
+    <!--
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registrado com sucesso:', registration);
+            })
+            .catch(error => {
+              console.log('Erro ao registrar SW:', error);
+            });
+        });
+      }
+    </script>
+    -->
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #333;
+        min-height: 100vh;
+        padding: 20px;
+        overflow-x: hidden;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 24px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+        animation: containerFadeIn 0.6s ease-out;
+      }
+
+      @keyframes containerFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        pointer-events: none;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        position: relative;
+      }
+
+      .header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+        font-weight: 400;
+      }
+
+      .main-content {
+        padding: 30px;
+      }
+
+      .section {
+        margin-bottom: 40px;
+      }
+
+      .section h2 {
+        color: #667eea;
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+        font-weight: 700;
+        position: relative;
+        padding-left: 15px;
+      }
+
+      .section h2::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 5px;
+        height: 30px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 3px;
+      }
+
+      .form-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s ease;
+      }
+
+      .form-container:hover {
+        box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.1), 0 4px 6px -2px rgba(102, 126, 234, 0.05);
+        transform: translateY(-2px);
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #555;
+      }
+
+      .form-group input, .form-group select {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        background: white;
+      }
+
+      .form-group input:focus, .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-1px);
+      }
+
+      .form-group input:hover, .form-group select:hover {
+        border-color: #667eea;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        width: auto;
+        transform: scale(1.2);
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+      }
+
+      .btn:hover::before {
+        left: 100%;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn-complete {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+      }
+
+      .btn-complete:hover {
+        box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+      }
+
+      .btn-delete {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+      }
+
+      .btn-delete:hover {
+        box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.4);
+      }
+
+      .btn-edit {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3);
+      }
+
+      .btn-edit:hover {
+        box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.4);
+      }
+
+      .btn-edit-mode {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      }
+
+      .btn-cancel-edit {
+        margin-left: 10px;
+      }
+
+      /* Modal de Edição */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 20px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+      }
+
+      .modal-header h2 {
+        color: #667eea;
+        font-size: 1.8rem;
+        margin: 0;
+      }
+
+      .close-modal {
+        background: none;
+        border: none;
+        font-size: 28px;
+        cursor: pointer;
+        color: #999;
+        transition: color 0.3s;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .close-modal:hover {
+        color: #667eea;
+      }
+
+      .participant-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        background: #f8f9fa;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        cursor: move;
+        transition: all 0.3s;
+      }
+
+      .participant-item:hover {
+        background: #f0f0f0;
+        border-color: #667eea;
+      }
+
+      .participant-item.dragging {
+        opacity: 0.5;
+      }
+
+      .drag-handle {
+        cursor: grab;
+        font-size: 18px;
+        color: #999;
+      }
+
+      .drag-handle:active {
+        cursor: grabbing;
+      }
+
+      .participant-name {
+        flex: 1;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .btn-remove-participant {
+        background: #ef4444;
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.3s;
+      }
+
+      .btn-remove-participant:hover {
+        background: #dc2626;
+      }
+
+      .add-participant-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .add-participant-group select {
+        flex: 1;
+      }
+
+      .add-participant-group button {
+        padding: 10px 20px;
+      }
+
+      .btn-secondary {
+        background: #9C27B0;
+        font-size: 14px;
+        padding: 10px 20px;
+      }
+
+      .btn-secondary:hover {
+        background: #7B1FA2;
+      }
+
+      .task-list {
+        display: grid;
+        gap: 20px;
+      }
+
+      .task-card {
+        background: white;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .task-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .task-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(102, 126, 234, 0.1), 0 10px 10px -5px rgba(102, 126, 234, 0.04);
+      }
+
+      .task-card:hover::before {
+        opacity: 1;
+      }
+
+      .task-card.overdue {
+        border-color: rgba(239, 68, 68, 0.2);
+        background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+      }
+
+      .task-card.overdue::before {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        opacity: 1;
+      }
+
+      .task-card.completed {
+        opacity: 0.8;
+        border-color: rgba(16, 185, 129, 0.2);
+        background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+      }
+
+      .task-card.completed::before {
+        background: linear-gradient(135deg, #10b981, #059669);
+        opacity: 1;
+      }
+
+      .task-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+      }
+
+      .task-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #333;
+      }
+
+      .task-assigned {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .task-assigned::before {
+        content: '👤';
+        font-size: 0.9em;
+      }
+
+      .task-details {
+        margin-bottom: 15px;
+        color: #666;
+      }
+
+      .task-details p {
+        margin-bottom: 5px;
+      }
+
+      .task-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-size: 1.1rem;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          margin: 10px;
+          border-radius: 15px;
+        }
+        
+        .header {
+          padding: 20px;
+        }
+        
+        .header h1 {
+          font-size: 2rem;
+        }
+        
+        .main-content {
+          padding: 20px;
+        }
+        
+        .task-actions {
+          flex-direction: column;
+        }
+
+        .task-actions .btn {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🏠 Organizador de Tarefas</h1>
+      </div>
+
+      <div class="main-content">
+        <!-- Seção de Nova Tarefa -->
+        <div class="section">
+          <h2>➕ Nova Tarefa</h2>
+          <div class="form-container">
+            <form id="taskForm">
+              <div class="form-group">
+                <label for="taskName">Nome da Tarefa:</label>
+                <input type="text" id="taskName" required placeholder="Ex: Lavar louça, Limpar banheiro...">
+              </div>
+
+              <div class="form-group">
+                <label for="frequency">Frequência:</label>
+                <select id="frequency" required>
+                  <option value="none">Sem prazo definido</option>
+                  <option value="daily">1 vez por dia</option>
+                  <option value="weekly">1 vez por semana</option>
+                  <option value="custom">Configurável (dias)</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="customFrequencyGroup" style="display: none;">
+                <label for="customDays">Intervalo personalizado (dias):</label>
+                <input type="number" id="customDays" min="1" placeholder="Ex: 3 (a cada 3 dias)">
+              </div>
+
+              <div class="form-group">
+                <label>Quem participa desta tarefa?</label>
+                <div class="checkbox-group" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" class="participant-checkbox" value="Tiago" checked>
+                    <label style="margin: 0;">Tiago</label>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" class="participant-checkbox" value="Caio" checked>
+                    <label style="margin: 0;">Caio</label>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" class="participant-checkbox" value="Patinhas" checked>
+                    <label style="margin: 0;">Patinhas</label>
+                  </div>
+                </div>
+                <small style="color: #666; margin-top: 5px; display: block;">Todas as tarefas são rotativas entre os participantes selecionados</small>
+              </div>
+
+              <button type="submit" class="btn">Criar Tarefa</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Lista de Tarefas -->
+        <div class="section">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0;">📝 Tarefas Ativas</h2>
+            <div class="sync-status" id="syncStatus">
+              <span class="sync-dot"></span>
+              <span class="sync-text">Sincronizado</span>
+            </div>
+          </div>
+          <div id="taskList" class="task-list">
+            <div class="loading">Carregando tarefas...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Edição -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>✏️ Editar Tarefa</h2>
+          <button class="close-modal" onclick="taskManager.closeEditModal()">&times;</button>
+        </div>
+
+        <form id="editTaskForm" onsubmit="taskManager.saveEditTask(event)">
+          <div class="form-group">
+            <label for="editTaskName">Nome da Tarefa:</label>
+            <input type="text" id="editTaskName" required placeholder="Nome da tarefa">
+          </div>
+
+          <div class="form-group">
+            <label for="editFrequency">Frequência:</label>
+            <select id="editFrequency" required>
+              <option value="none">Sem prazo definido</option>
+              <option value="daily">1 vez por dia</option>
+              <option value="weekly">1 vez por semana</option>
+              <option value="custom">Configurável (dias)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="editCustomFrequencyGroup" style="display: none;">
+            <label for="editCustomDays">Intervalo personalizado (dias):</label>
+            <input type="number" id="editCustomDays" min="1" placeholder="Ex: 3">
+          </div>
+
+          <div class="form-group">
+            <label for="editNextDue">Próximo vencimento (opcional):</label>
+            <input type="date" id="editNextDue">
+            <small style="color: #666; display: block; margin-top: 5px;">
+              Deixe em branco para calcular automaticamente pela frequência
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="editCurrentAssignee">Responsável atual:</label>
+            <select id="editCurrentAssignee" required>
+              <option value="Tiago">Tiago</option>
+              <option value="Caio">Caio</option>
+              <option value="Patinhas">Patinhas</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Ordem dos participantes (arraste para reordenar):</label>
+            <div id="editParticipantsList"></div>
+            <div class="add-participant-group">
+              <select id="editAddParticipant">
+                <option value="">+ Adicionar participante</option>
+                <option value="Tiago">Tiago</option>
+                <option value="Caio">Caio</option>
+                <option value="Patinhas">Patinhas</option>
+              </select>
+              <button type="button" class="btn btn-secondary" onclick="taskManager.addEditParticipant()">Adicionar</button>
+            </div>
+            <small style="color: #666; display: block; margin-top: 5px;">
+              A ordem define quem será o próximo responsável
+            </small>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn" style="flex: 1;">Salvar Alterações</button>
+            <button type="button" class="btn btn-secondary" onclick="taskManager.closeEditModal()">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+  </body>
+</html>
