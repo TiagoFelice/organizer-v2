@@ -13,6 +13,7 @@ function App() {
   const [tasks, setTasks] = useLocalStorage('organizer_tasks', []);
   const [message, setMessage] = useState(null);
   const [editingTask, setEditingTask] = useState(null);
+  const [showTaskForm, setShowTaskForm] = useState(false);
   const [syncStatus, setSyncStatus] = useState({ status: 'success', message: 'LocalStorage' });
   const [isLoading, setIsLoading] = useState(true);
   const unsubscribeRef = useRef(null);
@@ -302,14 +303,23 @@ function App() {
           )}
 
           <div className="content-wrapper">
-            <section className="form-section">
-              <TaskForm 
-                users={USERS}
-                onCreateTask={createTask}
-              />
-            </section>
+            {showTaskForm && (
+              <section className="form-modal-section">
+                <div className="form-modal">
+                  <button className="form-close-btn" onClick={() => setShowTaskForm(false)}>✕</button>
+                  <TaskForm 
+                    users={USERS}
+                    onCreateTask={(formData) => {
+                      createTask(formData);
+                      setShowTaskForm(false);
+                    }}
+                  />
+                </div>
+              </section>
+            )}
 
             <section className="tasks-section">
+              <button className="btn-add-task" onClick={() => setShowTaskForm(true)}>+</button>
               {isLoading ? (
                 <div className="loading-container">
                   <div className="loading-spinner"></div>
